@@ -1,6 +1,14 @@
-<div class="navbar__container">
+<div class="navbar__container d-flex justify-between items-center">
     <div class="navbar__container-logo d-flex items-center pointer" (click)="navigateHome('home')">
         <img src="assets/img/GreenAntLogo.png" alt="">
     </div>
-
+    <button class="navbar__container-chart-menu" mat-button [matMenuTriggerFor]="menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+    <mat-menu #menu="matMenu">
+      <button mat-menu-item>Item 1</button>
+      <button mat-menu-item>Item 2</button>
+    </mat-menu>
 </div>
