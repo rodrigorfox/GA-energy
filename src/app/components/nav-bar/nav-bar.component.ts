@@ -6,14 +6,9 @@ import { Router } from '@angular/router';
   templateUrl: './nav-bar.component.html',
   styleUrls: ['./nav-bar.component.scss']
 })
-export class NavBarComponent implements OnInit {
+export class NavBarComponent {
 
-  constructor(
-    private router: Router,
-  ) { }
-
-  ngOnInit(): void {
-  }
+  constructor(private router: Router) { }
 
   navigateHome(url: string){
     this.router.navigate([url]);
