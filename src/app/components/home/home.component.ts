@@ -14,45 +14,12 @@ export class HomeComponent implements OnInit, OnDestroy {
   loading: boolean = false;
   meterLabel: string = 'Medidor'
   meterOptions: Array<SelectOptions> = []
-  selectedDevice!: Array<string>;
+  meterMultiple: boolean = true;
+  selectedDevice!: Array<string> | string;
   subscription!: Subscription;
   measurements: Array<any> = []
   highcharts = Highcharts;
-  chartOptions: Highcharts.Options = {   
-    chart: {
-       type: "line"
-    },
-    title: {
-       text: "Consumo"
-    },
-    subtitle: {
-      //  text: "Source: WorldClimate.com"
-    },
-    xAxis:{
-       categories:["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    },
-    yAxis: {          
-       title:{
-          text:"Consumo (kWh)"
-       } 
-    },
-    tooltip: {
-       valueSuffix:" kWh"
-    },
-    series: [
-       {
-          name: 'Medidor 1',
-          type: 'line',
-          data: [7.0, 6.9, 9.5, 14.5, 18.2, 21.5, 25.2,26.5, 23.3, 18.3, 13.9, 9.6]
-       },
-       {
-          name: 'Medidor 2',
-          type: 'line',
-          data: [-0.2, 0.8, 5.7, 11.3, 17.0, 22.0, 24.8,24.1, 20.1, 14.1, 8.6, 2.5]
-       },
-    ]
- };
+  chartOptions: Highcharts.Options = {}
 
   constructor(private appService: AppService) { }
   
@@ -76,10 +43,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     ).subscribe()
   }
 
-  getEnergyData() {
+  getEnergyData(device: string) {
     this.loading = true
     const paramsconfig = {
-      device: 'mymeter-uid-5132&mymeter-02-uid&mymeter-uid-5132',
+      device: device,
       resolution : 'day',
       startDate: moment('2022-06-01 00:15:00+00').utc().format(),
       endDate: moment('2022-09-26 01:45:00+00').utc().format(),
@@ -99,7 +66,56 @@ export class HomeComponent implements OnInit, OnDestroy {
     return options
   }
 
-  selectDevice() {
-    console.log(this.selectedDevice)
+  generateGraphic() {
+    if (!this.selectedDevice || !this.selectedDevice.length) return
+    let devices = ''
+    if (Array.isArray(this.selectedDevice))
+    this.selectedDevice.forEach((device: string) => {
+      devices = devices ? `${devices}&${device}` : device
+    });
+    this.getEnergyData(typeof(this.selectedDevice) === 'string' ? this.selectedDevice : devices)
+  }
+
+  selectChart(compare: boolean) {
+    this.meterMultiple = compare
+    this.fillCharOptions(compare ? 'line' : 'column')
+  }
+
+  fillCharOptions(type: string) {
+    const categories = []
+    for (let i = 1; i<=30; i++)
+      categories.push(i.toString())
+    console.log(type, categories)
+    this.chartOptions = { ...this.chartOptions,
+      chart: {
+         type: type
+      },
+      title: {
+         text: "Consumo"
+      },
+      xAxis:{
+         categories: categories
+      },
+      yAxis: {          
+         title:{
+            text:"Consumo (kWh)"
+         } 
+      },
+      tooltip: {
+         valueSuffix:" kWh"
+      },
+      series: [
+         {
+            name: 'Medidor 1',
+            type: 'line',
+            data: [7.0, 6.9, 9.5, 14.5, 18.2, 21.5, 25.2,26.5, 23.3, 18.3, 13.9, 9.6]
+         },
+         {
+            name: 'Medidor 2',
+            type: 'line',
+            data: [-0.2, 0.8, 5.7, 11.3, 17.0, 22.0, 24.8,24.1, 20.1, 14.1, 8.6, 2.5]
+         },
+      ]
+   };
   }
 }

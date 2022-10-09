@@ -1,6 +1,16 @@
 <mat-form-field appearance="fill">
     <mat-label>{{ label }}</mat-label>
-    <mat-select
+    <mat-select *ngIf="!isMultiple"
+        [(ngModel)]="value"
+        id="input-{{id}}"
+        (input)="onChange(val)"
+        [disabled]="disabled"
+        (blur)="onTouch()">
+        <mat-option *ngFor="let option of options" [value]="option.value">
+        {{ option.label }}
+        </mat-option>
+    </mat-select>
+    <mat-select *ngIf="isMultiple"
         [(ngModel)]="value"
         id="input-{{id}}"
         (input)="onChange(val)"

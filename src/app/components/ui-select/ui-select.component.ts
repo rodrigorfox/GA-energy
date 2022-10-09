@@ -17,6 +17,7 @@ import { SelectOptions } from 'src/app';
 })
 export class UiSelectComponent extends FormFieldBaseDirective {
   @Input() options: Array<SelectOptions> = [];
+  @Input() isMultiple: boolean = false;
 
   constructor() { 
     super();
