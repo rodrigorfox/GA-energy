@@ -19,7 +19,7 @@
         </mat-menu>
     </div>
 </div>
-<highcharts-chart
+<highcharts-chart *ngIf="!loading"
     style="width: 100%; height: 400px; display: block;"
    [Highcharts]="highcharts" 
    [options]="chartOptions">

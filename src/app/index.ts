@@ -9,6 +9,12 @@ export interface Device {
     id_dispositivo: string,
 }
 
+export interface accumulatedData {
+    data: string,
+    accumulatedenergy: string,
+    id_dispositivo: string,
+}
+
 export interface SelectOptions {
     label: string,
     disabled : boolean,

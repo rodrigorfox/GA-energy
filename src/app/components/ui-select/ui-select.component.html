@@ -5,6 +5,7 @@
         id="input-{{id}}"
         (input)="onChange(val)"
         [disabled]="disabled"
+        [value]="val"
         (blur)="onTouch()">
         <mat-option *ngFor="let option of options" [value]="option.value">
         {{ option.label }}

@@ -3,7 +3,7 @@ import { finalize, Subscription, tap } from 'rxjs';
 import { AppService } from 'src/app/services/app.service';
 import * as moment from 'moment';
 import * as Highcharts from 'highcharts';
-import { Device, SelectOptions } from 'src/app';
+import { accumulatedData, Device, SelectOptions } from 'src/app';
 
 @Component({
   selector: 'app-home',
@@ -14,33 +14,59 @@ export class HomeComponent implements OnInit, OnDestroy {
   loading: boolean = false;
   meterLabel: string = 'Medidor'
   meterOptions: Array<SelectOptions> = []
-  meterMultiple: boolean = true;
+  meterMultiple: boolean = false;
   selectedDevice!: Array<string> | string;
-  subscription!: Subscription;
+  subscriptions!: Subscription[];
   measurements: Array<any> = []
   highcharts = Highcharts;
-  chartOptions: Highcharts.Options = {}
+  chartOptions: Highcharts.Options = {
+    chart: {
+       type: 'column'
+    },
+    title: {
+       text: "Consumo"
+    },
+    xAxis:{
+       categories: []
+    },
+    yAxis: {          
+       title:{
+          text:"Consumo (kWh)"
+       } 
+    },
+    tooltip: {
+       valueSuffix:" kWh"
+    },
+    series: []
+  };
 
   constructor(private appService: AppService) { }
   
   ngOnInit(): void {
     this.getDevices()
+    this.setCategories()
   }
 
   ngOnDestroy(): void {
-    this.subscription.unsubscribe()
+    this.subscriptions.forEach((subscription) => subscription.unsubscribe())
   }
 
   getDevices() {
     this.loading = true
     const url = 'api/devices'
-    this.subscription = this.appService.doGet(url).pipe(
+    const subscription = this.appService.doGet(url).pipe(
       tap((response) => {
         const arr = response.map((x: Device) => x.id_dispositivo)
         this.meterOptions = this.generateOptionsByString(arr)
       }),
+      tap(() => {
+        if (!this.meterOptions.length) return
+        this.selectedDevice = this.meterOptions[0].value
+        this.getEnergyData(this.selectedDevice)
+      }),
       finalize(() => this.loading = false)
     ).subscribe()
+    this.subscriptions.push(subscription)
   }
 
   getEnergyData(device: string) {
@@ -51,12 +77,14 @@ export class HomeComponent implements OnInit, OnDestroy {
       startDate: moment('2022-06-01 00:15:00+00').utc().format(),
       endDate: moment('2022-09-26 01:45:00+00').utc().format(),
     }
-    this.subscription = this.appService.getEnergyData(paramsconfig).pipe(
-      tap((response) => {
+    const subscription = this.appService.getEnergyData(paramsconfig).pipe(
+      tap((response: Array<accumulatedData>) => {
         this.measurements = response
+        this.setSeries(response)
       }),
       finalize(() => this.loading = false)
     ).subscribe()
+    this.subscriptions.push(subscription)
   }
 
   generateOptionsByString(arr: Array<string>): Array<SelectOptions> {
@@ -78,44 +106,38 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   selectChart(compare: boolean) {
     this.meterMultiple = compare
-    this.fillCharOptions(compare ? 'line' : 'column')
+    this.fillChartOptions(compare ? 'line' : 'column')
   }
 
-  fillCharOptions(type: string) {
-    const categories = []
-    for (let i = 1; i<=30; i++)
-      categories.push(i.toString())
-    console.log(type, categories)
-    this.chartOptions = { ...this.chartOptions,
-      chart: {
-         type: type
-      },
-      title: {
-         text: "Consumo"
-      },
-      xAxis:{
-         categories: categories
-      },
-      yAxis: {          
-         title:{
-            text:"Consumo (kWh)"
-         } 
-      },
-      tooltip: {
-         valueSuffix:" kWh"
-      },
-      series: [
-         {
-            name: 'Medidor 1',
-            type: 'line',
-            data: [7.0, 6.9, 9.5, 14.5, 18.2, 21.5, 25.2,26.5, 23.3, 18.3, 13.9, 9.6]
-         },
-         {
-            name: 'Medidor 2',
-            type: 'line',
-            data: [-0.2, 0.8, 5.7, 11.3, 17.0, 22.0, 24.8,24.1, 20.1, 14.1, 8.6, 2.5]
-         },
-      ]
-   };
+  fillChartOptions(type: string) {
+    if (this.chartOptions.chart)
+    this.chartOptions.chart.type = type
+  }
+
+  setCategories() {
+    if (this.chartOptions.xAxis && !Array.isArray(this.chartOptions.xAxis)) {
+      this.chartOptions.xAxis.categories = []
+      for (let i = 1; i<=30; i++)
+        this.chartOptions.xAxis.categories.push(i.toString())
+    }
+  }
+
+  setSeries(response: Array<accumulatedData>) {
+    let energy: any = {}
+    response.forEach((x: accumulatedData) => {
+      if (!energy.hasOwnProperty(x.id_dispositivo)) energy[x.id_dispositivo]  = []
+        energy[x.id_dispositivo]?.push(parseInt(x.accumulatedenergy))
+    })
+
+    if (Array.isArray(this.chartOptions.series)) {
+      this.chartOptions.series = []
+      Object.keys(energy).forEach((key) => {
+        this.chartOptions.series?.push({
+          name: key,
+          type: this.chartOptions.chart?.type,
+          data: energy[key]
+       } as Highcharts.SeriesOptionsType)
+      })
+    }
   }
 }

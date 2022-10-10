@@ -4,7 +4,7 @@ import { ControlValueAccessor } from "@angular/forms";
 @Directive()
 export abstract class FormFieldBaseDirective implements OnInit, ControlValueAccessor {
     id!: number;
-    val: any;
+    @Input() val: any;
     @Input() label!: string;
     @Input() placeholder!: string;
     @Input() disabled: boolean = false;
