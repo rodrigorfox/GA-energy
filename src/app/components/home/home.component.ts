@@ -16,8 +16,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   meterOptions: Array<SelectOptions> = []
   meterMultiple: boolean = false;
   selectedDevice!: Array<string> | string;
-  subscriptions!: Subscription[];
-  measurements: Array<any> = []
+  subscriptions: Subscription[] = []
+  measurements: Array<accumulatedData> = []
   highcharts = Highcharts;
   chartOptions: Highcharts.Options = {
     chart: {
@@ -51,7 +51,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.subscriptions.forEach((subscription) => subscription.unsubscribe())
   }
 
-  getDevices() {
+  getDevices(): void {
     this.loading = true
     const url = 'api/devices'
     const subscription = this.appService.doGet(url).pipe(
@@ -69,7 +69,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.subscriptions.push(subscription)
   }
 
-  getEnergyData(device: string) {
+  getEnergyData(device: string): void {
     this.loading = true
     const paramsconfig = {
       device: device,
@@ -94,7 +94,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     return options
   }
 
-  generateGraphic() {
+  generateGraphic(): void {
     if (!this.selectedDevice || !this.selectedDevice.length) return
     let devices = ''
     if (Array.isArray(this.selectedDevice))
@@ -104,17 +104,17 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.getEnergyData(typeof(this.selectedDevice) === 'string' ? this.selectedDevice : devices)
   }
 
-  selectChart(compare: boolean) {
+  selectChart(compare: boolean): void {
     this.meterMultiple = compare
     this.fillChartOptions(compare ? 'line' : 'column')
   }
 
-  fillChartOptions(type: string) {
+  fillChartOptions(type: string): void {
     if (this.chartOptions.chart)
     this.chartOptions.chart.type = type
   }
 
-  setCategories() {
+  setCategories(): void {
     if (this.chartOptions.xAxis && !Array.isArray(this.chartOptions.xAxis)) {
       this.chartOptions.xAxis.categories = []
       for (let i = 1; i<=30; i++)
@@ -122,7 +122,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  setSeries(response: Array<accumulatedData>) {
+  setSeries(response: Array<accumulatedData>): void {
     let energy: any = {}
     response.forEach((x: accumulatedData) => {
       if (!energy.hasOwnProperty(x.id_dispositivo)) energy[x.id_dispositivo]  = []
