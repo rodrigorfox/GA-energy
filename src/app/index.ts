@@ -20,3 +20,7 @@ export interface SelectOptions {
     disabled : boolean,
     value: string,
 }
+export interface TotalBadge {
+    consumoTotal: string,
+    valorTotal : string,
+}

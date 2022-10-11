@@ -24,3 +24,7 @@
    [Highcharts]="highcharts" 
    [options]="chartOptions">
 </highcharts-chart>
+<div *ngIf="!loading && chartOptions.chart?.type === 'column'" class="value-metrics">
+    <p>Total: {{ totalBadge.consumoTotal }}</p>
+    <p>Fatura: {{ totalBadge.valorTotal }}</p>
+</div>

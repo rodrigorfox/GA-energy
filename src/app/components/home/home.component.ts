@@ -3,7 +3,7 @@ import { finalize, Subscription, tap } from 'rxjs';
 import { AppService } from 'src/app/services/app.service';
 import * as moment from 'moment';
 import * as Highcharts from 'highcharts';
-import { accumulatedData, Device, SelectOptions } from 'src/app';
+import { accumulatedData, Device, SelectOptions, TotalBadge } from 'src/app';
 
 @Component({
   selector: 'app-home',
@@ -11,14 +11,16 @@ import { accumulatedData, Device, SelectOptions } from 'src/app';
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent implements OnInit, OnDestroy {
-  loading: boolean = false;
+  loading: boolean = false
   meterLabel: string = 'Medidor'
   meterOptions: Array<SelectOptions> = []
   meterMultiple: boolean = false;
   selectedDevice!: Array<string> | string;
   subscriptions: Subscription[] = []
   measurements: Array<accumulatedData> = []
-  highcharts = Highcharts;
+  highcharts = Highcharts
+  initials: string = 'kWh'
+  totalBadge: TotalBadge = {} as TotalBadge
   chartOptions: Highcharts.Options = {
     chart: {
        type: 'column'
@@ -26,16 +28,18 @@ export class HomeComponent implements OnInit, OnDestroy {
     title: {
        text: "Consumo"
     },
+    colors: ['#2c9932', '#FC0D1B','#2f7ed8', '#0d233a', '#8bbc21', '#910000', '#1aadce',
+        '#492970', '#f28f43', '#77a1e5', '#c42525', '#a6c96a'],
     xAxis:{
        categories: []
     },
     yAxis: {          
        title:{
-          text:"Consumo (kWh)"
+          text: `Consumo (${this.initials})`
        } 
     },
     tooltip: {
-       valueSuffix:" kWh"
+       valueSuffix: ` ${this.initials}`
     },
     series: []
   };
@@ -82,7 +86,10 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.measurements = response
         this.setSeries(response)
       }),
-      finalize(() => this.loading = false)
+      finalize(() => {
+        this.loading = false
+        this.totalBadge = this.getTotalValue(this.meterMultiple ? undefined : this.chartOptions.series)
+      })
     ).subscribe()
     this.subscriptions.push(subscription)
   }
@@ -126,9 +133,9 @@ export class HomeComponent implements OnInit, OnDestroy {
     let energy: any = {}
     response.forEach((x: accumulatedData) => {
       if (!energy.hasOwnProperty(x.id_dispositivo)) energy[x.id_dispositivo]  = []
-        energy[x.id_dispositivo]?.push(parseInt(x.accumulatedenergy))
+        energy[x.id_dispositivo]?.push(parseInt(x.accumulatedenergy)/ 1000)
     })
-
+    
     if (Array.isArray(this.chartOptions.series)) {
       this.chartOptions.series = []
       Object.keys(energy).forEach((key) => {
@@ -138,6 +145,18 @@ export class HomeComponent implements OnInit, OnDestroy {
           data: energy[key]
        } as Highcharts.SeriesOptionsType)
       })
+    }
+  }
+
+  getTotalValue(series: Array<any> | undefined): TotalBadge {
+    if (!series) return {} as TotalBadge
+    let totalEnergy = 0
+    series.forEach((key) => {
+      key.data.forEach((count: number) => totalEnergy += count)
+    })
+    return {
+      consumoTotal: `${totalEnergy.toLocaleString('pt-BR', { style: 'decimal' })} ${this.initials}`,
+      valorTotal : (totalEnergy * 0.98).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
     }
   }
 }
