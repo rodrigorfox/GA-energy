@@ -17,10 +17,16 @@ export interface accumulatedData {
 
 export interface SelectOptions {
     label: string,
-    disabled : boolean,
+    disabled?: boolean,
     value: string,
 }
 export interface TotalBadge {
     consumoTotal: string,
     valorTotal : string,
 }
+export interface inputField {
+    label: string,
+    options: Array<SelectOptions>,
+    multiple?: boolean,
+    value: Array<string> | string
+  }

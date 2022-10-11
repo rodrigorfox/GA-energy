@@ -2,10 +2,17 @@
     <div class="header__left-group flex-row">
         <app-ui-select
             name="meterLabel"
-            [label]="meterLabel"
-            [options]="meterOptions"
-            [(ngModel)]="selectedDevice"
-            [isMultiple]="meterMultiple"
+            [label]="meter.label"
+            [options]="meter.options"
+            [(ngModel)]="meter.value"
+            [isMultiple]="meter.multiple"
+        ></app-ui-select>
+        <app-ui-select
+            name="aggregatorLabel"
+            class="ml-01"
+            [label]="aggregator.label"
+            [options]="aggregator.options"
+            [(ngModel)]="aggregator.value"
         ></app-ui-select>
         <button mat-raised-button (click)="generateGraphic()">Gerar Gráfico</button>
     </div>

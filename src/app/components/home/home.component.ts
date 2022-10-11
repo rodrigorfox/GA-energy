@@ -3,7 +3,7 @@ import { finalize, Subscription, tap } from 'rxjs';
 import { AppService } from 'src/app/services/app.service';
 import * as moment from 'moment';
 import * as Highcharts from 'highcharts';
-import { accumulatedData, Device, SelectOptions, TotalBadge } from 'src/app';
+import { accumulatedData, Device, inputField, SelectOptions, TotalBadge } from 'src/app';
 
 @Component({
   selector: 'app-home',
@@ -12,10 +12,30 @@ import { accumulatedData, Device, SelectOptions, TotalBadge } from 'src/app';
 })
 export class HomeComponent implements OnInit, OnDestroy {
   loading: boolean = false
-  meterLabel: string = 'Medidor'
-  meterOptions: Array<SelectOptions> = []
-  meterMultiple: boolean = false;
-  selectedDevice!: Array<string> | string;
+  meter: inputField = {
+    label: 'Medidor',
+    options: [],
+    multiple: false,
+    value: ''
+  }
+  aggregator: inputField = {
+    label: 'Agregação',
+    options: [
+      {
+        label: 'Diária',
+        value: 'day',
+      },
+      {
+        label: 'Hora',
+        value: 'hour',
+      },
+      {
+        label: 'Nenhuma',
+        value: 'raw',
+      },
+    ],
+    value: 'day'
+  }
   subscriptions: Subscription[] = []
   measurements: Array<accumulatedData> = []
   highcharts = Highcharts
@@ -61,12 +81,12 @@ export class HomeComponent implements OnInit, OnDestroy {
     const subscription = this.appService.doGet(url).pipe(
       tap((response) => {
         const arr = response.map((x: Device) => x.id_dispositivo)
-        this.meterOptions = this.generateOptionsByString(arr)
+        this.meter.options = this.generateOptionsByString(arr)
       }),
       tap(() => {
-        if (!this.meterOptions.length) return
-        this.selectedDevice = this.meterOptions[0].value
-        this.getEnergyData(this.selectedDevice)
+        if (!this.meter.options.length) return
+        this.meter.value = this.meter.options[0].value
+        this.getEnergyData(this.meter.value)
       }),
       finalize(() => this.loading = false)
     ).subscribe()
@@ -77,7 +97,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.loading = true
     const paramsconfig = {
       device: device,
-      resolution : 'day',
+      resolution : !Array.isArray(this.aggregator.value) ? this.aggregator.value : 'day',
       startDate: moment('2022-06-01 00:15:00+00').utc().format(),
       endDate: moment('2022-09-26 01:45:00+00').utc().format(),
     }
@@ -88,7 +108,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       }),
       finalize(() => {
         this.loading = false
-        this.totalBadge = this.getTotalValue(this.meterMultiple ? undefined : this.chartOptions.series)
+        this.totalBadge = this.getTotalValue(this.meter.multiple ? undefined : this.chartOptions.series)
       })
     ).subscribe()
     this.subscriptions.push(subscription)
@@ -102,17 +122,17 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   generateGraphic(): void {
-    if (!this.selectedDevice || !this.selectedDevice.length) return
+    if (!this.meter.value || !this.meter.value.length) return
     let devices = ''
-    if (Array.isArray(this.selectedDevice))
-    this.selectedDevice.forEach((device: string) => {
+    if (Array.isArray(this.meter.value))
+    this.meter.value.forEach((device: string) => {
       devices = devices ? `${devices}&${device}` : device
     });
-    this.getEnergyData(typeof(this.selectedDevice) === 'string' ? this.selectedDevice : devices)
+    this.getEnergyData(typeof(this.meter.value) === 'string' ? this.meter.value : devices)
   }
 
   selectChart(compare: boolean): void {
-    this.meterMultiple = compare
+    this.meter.multiple = compare
     this.fillChartOptions(compare ? 'line' : 'column')
   }
 
